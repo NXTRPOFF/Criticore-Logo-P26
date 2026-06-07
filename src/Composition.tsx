@@ -51,8 +51,13 @@ export const MyComposition = () => {
     }
   );
 
-  // Gentle hue drift so the rainbow feels alive while visible.
-  const hueShift = interpolate(frame, [s(0.73), s(2.87)], [0, 60], {
+  // Colors continuously flow through the logo. The gradient tiles seamlessly
+  // (red→red), so translating by exactly one tile loops with no visible jump.
+  const loopDur = 2.4 * fps;
+  const flow = -((frame % loopDur) / loopDur) * 50; // 0% → -50% per loop
+
+  // Gentle hue drift on top of the flow for extra shimmer.
+  const hueShift = interpolate(frame, [s(0.73), s(2.87)], [0, 45], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -77,12 +82,14 @@ export const MyComposition = () => {
         {/* Original logo — always fully visible underneath, colors untouched */}
         <Img src={pngUrl} style={{ width: LOGO_WIDTH, display: "block" }} />
 
-        {/* Rainbow overlay — masked to the logo shape, simply fades in and out */}
+        {/* Rainbow overlay — masked to the logo shape, fades in/out while the
+            colors flow continuously across the logo */}
         <div
           style={{
             position: "absolute",
             inset: 0,
             opacity: rainbowOpacity,
+            overflow: "hidden",
             WebkitMaskImage: `url(${pngUrl})`,
             maskImage: `url(${pngUrl})`,
             WebkitMaskSize: "contain",
@@ -94,8 +101,14 @@ export const MyComposition = () => {
           <div
             style={{
               position: "absolute",
-              inset: 0,
+              top: 0,
+              bottom: 0,
+              left: 0,
+              width: "200%",
               background: RAINBOW,
+              backgroundSize: "50% 100%",
+              backgroundRepeat: "repeat",
+              transform: `translateX(${flow}%)`,
               filter: `hue-rotate(${hueShift}deg)`,
             }}
           />
