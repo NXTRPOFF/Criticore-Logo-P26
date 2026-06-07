@@ -28,8 +28,8 @@
     "dev": "remotion studio",
     "prebuild": "npm run assets",
     "build": "remotion bundle",
-    "render": "npm run assets && remotion render CritiCoreLogoPride",
-    "render:transparent": "npm run assets && remotion render CritiCoreLogoPride out/CritiCore-Pride.mov --codec=prores --prores-profile=4444 --image-format=png --pixel-format=yuva444p10le",
+    "render": "npm run assets && remotion render CritiCoreLogoPride Render/CritiCore-Pride.mp4 --codec=h265",
+    "render:transparent": "npm run assets && remotion render CritiCoreLogoPride Render/CritiCore-Pride.mov --codec=prores --prores-profile=4444 --image-format=png --pixel-format=yuva444p10le",
     "upgrade": "remotion upgrade",
     "lint": "eslint src && tsc"
   },

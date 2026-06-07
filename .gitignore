@@ -6,5 +6,8 @@ dist
 # Ignore the output video from Git but not videos you import into src/.
 out
 
+# Rendered video output (regenerate with `npm run render` / `npm run render:transparent`)
+Render
+
 # Generated from src/CritiCore Logonor.svg by scripts/generate-logo-png.mjs
 public/CritiCore_Logonor.png
