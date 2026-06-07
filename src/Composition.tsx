@@ -1,44 +1,66 @@
-import { useCurrentFrame, interpolate, staticFile, Img } from "remotion";
+import {
+  useCurrentFrame,
+  interpolate,
+  staticFile,
+  Img,
+  spring,
+  useVideoConfig,
+  Easing,
+} from "remotion";
 
 const LOGO_WIDTH = 320;
 
-const RAINBOW =
-  "linear-gradient(90deg, #ff0000 0%, #ff7700 17%, #ffff00 33%, #00cc00 50%, #0044ff 67%, #8800cc 83%, #ff0066 100%)";
+// Full smooth rainbow spectrum across the whole logo.
+const hslStops = Array.from({ length: 25 }, (_, i) => {
+  const pct = (i / 24) * 100;
+  const hue = (i / 24) * 360;
+  return `hsl(${hue.toFixed(1)},100%,55%) ${pct.toFixed(2)}%`;
+}).join(", ");
+const RAINBOW = `linear-gradient(90deg, ${hslStops})`;
 
 export const MyComposition = () => {
   const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
 
-  // Logo fades in during first 12 frames
-  const logoOpacity = interpolate(frame, [0, 12], [0, 1], {
-    extrapolateLeft: "clamp",
+  // Timing helper: seconds → frames (framerate-independent).
+  const s = (sec: number) => sec * fps;
+
+  // --- Entrance (spring): slide in from left + gentle scale up ---
+  const entrance = spring({
+    frame,
+    fps,
+    config: { damping: 18, stiffness: 120, mass: 0.8 },
+    durationInFrames: Math.round(0.95 * fps),
+  });
+
+  const logoX = interpolate(entrance, [0, 1], [-60, 0]);
+  const logoScale = interpolate(entrance, [0, 1], [0.82, 1]);
+  const logoOpacity = interpolate(entrance, [0, 0.35], [0, 1], {
     extrapolateRight: "clamp",
   });
 
-  // Rainbow sweep: gradient moves from -100% to +100% translateX
-  const sweepX = interpolate(frame, [10, 65], [-110, 110], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-
-  // Rainbow layer fades in then out
+  // --- Rainbow: smooth fade in → hold → smooth fade out ---
   const rainbowOpacity = interpolate(
     frame,
-    [10, 18, 58, 68],
+    [s(0.73), s(1.5), s(2.07), s(2.87)],
     [0, 1, 1, 0],
-    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+    {
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+      easing: Easing.inOut(Easing.cubic),
+    }
   );
 
-  const svgUrl = staticFile("CritiCore_Logonor.svg");
+  // Gentle hue drift so the rainbow feels alive while visible.
+  const hueShift = interpolate(frame, [s(0.73), s(2.87)], [0, 60], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  const pngUrl = staticFile("CritiCore_Logonor.png");
 
   return (
-    <div
-      style={{
-        position: "absolute",
-        inset: 0,
-        background: "transparent",
-      }}
-    >
-      {/* Logo container — top left */}
+    <div style={{ position: "absolute", inset: 0, background: "transparent" }}>
       <div
         style={{
           position: "absolute",
@@ -46,39 +68,35 @@ export const MyComposition = () => {
           left: 60,
           width: LOGO_WIDTH,
           opacity: logoOpacity,
+          transform: `translateX(${logoX}px) scale(${logoScale})`,
+          transformOrigin: "left center",
+          // Soft shadow keeps the logo readable on bright/busy backgrounds.
+          filter: "drop-shadow(0 4px 14px rgba(0,0,0,0.28))",
         }}
       >
-        {/* Original SVG — colors never changed */}
-        <Img
-          src={svgUrl}
-          style={{ width: LOGO_WIDTH, display: "block" }}
-        />
+        {/* Original logo — always fully visible underneath, colors untouched */}
+        <Img src={pngUrl} style={{ width: LOGO_WIDTH, display: "block" }} />
 
-        {/* Rainbow layer masked to the logo's visible pixels */}
+        {/* Rainbow overlay — masked to the logo shape, simply fades in and out */}
         <div
           style={{
             position: "absolute",
             inset: 0,
             opacity: rainbowOpacity,
-            WebkitMaskImage: `url(${svgUrl})`,
-            maskImage: `url(${svgUrl})`,
+            WebkitMaskImage: `url(${pngUrl})`,
+            maskImage: `url(${pngUrl})`,
             WebkitMaskSize: "contain",
             maskSize: "contain",
             WebkitMaskRepeat: "no-repeat",
             maskRepeat: "no-repeat",
-            overflow: "hidden",
           }}
         >
-          {/* Moving rainbow strip — wider than container for smooth entry/exit */}
           <div
             style={{
               position: "absolute",
-              top: 0,
-              bottom: 0,
-              left: "-50%",
-              width: "200%",
+              inset: 0,
               background: RAINBOW,
-              transform: `translateX(${sweepX}%)`,
+              filter: `hue-rotate(${hueShift}deg)`,
             }}
           />
         </div>

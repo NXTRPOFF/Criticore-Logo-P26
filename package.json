@@ -7,10 +7,10 @@
   "private": true,
   "dependencies": {
     "@remotion/cli": "4.0.473",
+    "@remotion/tailwind-v4": "4.0.473",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "remotion": "4.0.473",
-    "@remotion/tailwind-v4": "4.0.473",
     "tailwindcss": "4.0.0"
   },
   "devDependencies": {
@@ -19,11 +19,17 @@
     "@types/web": "0.0.166",
     "eslint": "9.19.0",
     "prettier": "3.8.1",
+    "sharp": "^0.34.5",
     "typescript": "5.9.3"
   },
   "scripts": {
+    "assets": "node scripts/generate-logo-png.mjs",
+    "predev": "npm run assets",
     "dev": "remotion studio",
+    "prebuild": "npm run assets",
     "build": "remotion bundle",
+    "render": "npm run assets && remotion render CritiCoreLogoPride",
+    "render:transparent": "npm run assets && remotion render CritiCoreLogoPride out/CritiCore-Pride.mov --codec=prores --prores-profile=4444 --image-format=png --pixel-format=yuva444p10le",
     "upgrade": "remotion upgrade",
     "lint": "eslint src && tsc"
   },
